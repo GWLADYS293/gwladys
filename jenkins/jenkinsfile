@@ -1,0 +1,49 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKERHUB_USERNAME = "gwladys123"
+        IMAGE_NAME         = "gwladys-flask-app"
+        GITHUB_REPO        = "https://github.com/GWLADYS293/gwladys.git"
+        DOCKERHUB_CREDS    = credentials('dockerhub-credentials')
+    }
+
+    stages {
+
+        stage('Clonage') {
+            steps {
+                echo '📥 Clonage du dépôt GitHub...'
+                git branch: 'main', url: "${GITHUB_REPO}"
+                echo '✅ Clonage terminé.'
+            }
+        }
+
+        stage('Image') {
+            steps {
+                echo '🔨 Construction de l image Docker...'
+                sh 'docker build -t ${DOCKERHUB_USERNAME}/${IMAGE_NAME}:latest .'
+                echo '✅ Image construite avec succès.'
+            }
+        }
+
+        stage('Publication') {
+            steps {
+                echo '🚀 Publication de l image sur DockerHub...'
+                sh '''
+                    echo $DOCKERHUB_CREDS_PSW | docker login -u $DOCKERHUB_CREDS_USR --password-stdin
+                    docker push ${DOCKERHUB_USERNAME}/${IMAGE_NAME}:latest
+                '''
+                echo '✅ Image publiée sur DockerHub.'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '🎉 Pipeline exécuté avec succès !'
+        }
+        failure {
+            echo '❌ Une erreur est survenue dans le pipeline.'
+        }
+    }
+}
