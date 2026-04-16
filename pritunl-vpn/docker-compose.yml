@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+
+  pritunl:
+    image: jippi/pritunl
+    container_name: pritunl-server
+    privileged: true
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "1194:1194/udp"
+    environment:
+      - PRITUNL_MONGODB_URI=mongodb://mongo:27017/pritunl
+    volumes:
+      - ./volumes/pritunl:/var/lib/pritunl
+    networks:
+      - vpn-network
+    depends_on:
+      - mongo
+    devices:
+      - /dev/net/tun:/dev/net/tun
+
+  mongo:
+    image: mongo:4.4
+    container_name: pritunl-mongodb
+    restart: unless-stopped
+    volumes:
+      - ./volumes/mongodb:/data/db
+    networks:
+      - vpn-network
+    environment:
+      - MONGO_INITDB_DATABASE=pritunl
+
+networks:
+  vpn-network:
+    driver: bridge
